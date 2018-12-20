@@ -4,6 +4,8 @@ The specification is based on the WebAssembly binary encoding.  A major differen
 
 In general, variable-length lists are stored with a `varuint` size followed by the entries.
 
+Signed integers are stored in 2's compliment.
+
 #### `string`
 
 Field | Type | Description
