@@ -87,14 +87,15 @@ Otherwise:
 
 Value of `typename` | Description
 --- | --- | ---
-1 | Array.  Read another `typeid`, which is the element type of the array.
-32 | i8
-33 | i16
-34 | i32
-35 | i64
-36 | i128
-42 | f32
-43 | f64
+0x1 | Array.  Read another `typeid`, which is the element type of the array.
+0x20 | i8
+0x21 | i16
+0x22 | i32
+0x23 | i64
+0x24 | i128
+0x32 | f32
+0x33 | f64
+0x34 | f128
 
 ### SharedRecord section payload
 
@@ -283,7 +284,8 @@ In this section, the operand and result can have different width.
 
 Name | Opcode | Arguments | Description
 --- | --- | ---
-`iconv` | `0x80` | operand: `referenceid`, result: `referenceid` | Integer conversion (signed)
-`iconvu` | `0x81` | operand: `referenceid`, result: `referenceid` | Integer conversion (unsigned)
-`fconv` | `0x82` | operand: `referenceid`, result: `referenceid` | Float conversion
-`reinterpret` | `0x83` | operand: `referenceid`, result: `referenceid` | Reinterpretation between integer and float types (operand and result must have the same width)
+`conv` | `0x80` | operand: `referenceid`, result: `referenceid` | Integer or float conversion (signed integer)
+`convu` | `0x81` | operand: `referenceid`, result: `referenceid` | Integer or float conversion (unsigned integer)
+`reinterpret` | `0x82` | operand: `referenceid`, result: `referenceid` | Reinterpretation between integer and float types (operand and result must have the same width)
+
+Note: when converting between floats, `conv` and `convu` are equivalent
