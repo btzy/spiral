@@ -1,8 +1,8 @@
 #include <iostream>
-#include <ctest/header.hpp>
+#include <spiral/spiral.hpp>
 
 int main() {
     using std::cout;
     using std::endl;
-    cout << f() << endl;
+    //spiral::Module mod;
 }
