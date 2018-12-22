@@ -88,16 +88,18 @@ If `typename` is positive, it represents a record type with that ID.
 Otherwise:
 
 Value of `typename` | Description
---- | --- | ---
-0x1 | Array.  Read another `typeid`, which is the element type of the array.
-0x20 | i8
-0x21 | i16
-0x22 | i32
-0x23 | i64
-0x24 | i128
-0x32 | f32
-0x33 | f64
-0x34 | f128
+--- | ---
+-0x1 | Array.  Read another `typeid`, which is the element type of the array.
+-0x20 | i8
+-0x21 | i16
+-0x22 | i32
+-0x23 | i64
+-0x24 | i128
+-0x32 | f32
+-0x33 | f64
+-0x34 | f128
+
+Note that the values in the table above are **negative**!
 
 ### SharedRecord section payload
 
@@ -199,7 +201,7 @@ Value of `appendage`:
 ##### Control flow operators
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `unreachable` | `0x00` |  | Undefined behaviour if execution reaches this instruction
 `nop` | `0x01` |  | No operation
 `jmp` | `0x02` | target: `instructionid` | Jump to instruction
@@ -212,7 +214,7 @@ Name | Opcode | Arguments | Description
 Works with integral and floats only.
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `imm` | `0x0f` | var: `referenceid`, value: `immediate` | Copy immediate into variable
 
 ##### Move/Copy operators
@@ -220,7 +222,7 @@ Name | Opcode | Arguments | Description
 Works with all variable types.
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `copy` | `0x10` | source: `referenceid`, destination: `referenceid` | Copy immediate into variable (source is preserved)
 `move` | `0x11` | source: `referenceid`, destination: `referenceid` | Move immediate into variable (source may or may not be preserved)
 
@@ -229,7 +231,7 @@ Name | Opcode | Arguments | Description
 Variables must be integral types.
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `slt` | `0x20` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | Set less than (signed) `result = operand1 < operand2 ? 1 : 0`
 `sltu` | `0x21` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | Set less than (unsigned) `result = operand1 < operand2 ? 1 : 0`
 `seq` | `0x22` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result == operand1 < operand2 ? 1 : 0`
@@ -243,17 +245,17 @@ Name | Opcode | Arguments | Description
 `divu` | `0x2b` | dividend: `referenceid`, divisor: `referenceid`, quotient: `referenceid`, remainder: `referenceid` | Divide (wrap around on overflow/underflow) `result = operand1 / operand2`
 `mulex` | `0x2c` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | Multiply with larger result (undefined behaviour on overflow/underflow) `result = operand1 * operand2`
 `muluex` | `0x2d` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | Multiply with larger result (wrap around on overflow/underflow) `result = operand1 * operand2`
-`divex` | `0x2e` | dividend: `referenceid`, divisor: `referenceid`, quotient: `referenceid`, remainder: `referenceid` | Divide with larger dividend (undefined behaviour on overflow/underflow) `result = operand1 / operand2`
-`divuex` | `0x2f` | dividend: `referenceid`, divisor: `referenceid`, quotient: `referenceid`, remainder: `referenceid` | Divide with larger dividend (wrap around on overflow/underflow) `result = operand1 / operand2`
+`divex` | `0x2e` | dividend: `referenceid`, divisor: `referenceid`, quotient: `referenceid`, remainder: `referenceid` | Divide with larger dividend (undefined behaviour on overflow/underflow, or if quotient does not fit the integer width) `result = operand1 / operand2`
+`divuex` | `0x2f` | dividend: `referenceid`, divisor: `referenceid`, quotient: `referenceid`, remainder: `referenceid` | Divide with larger dividend (wrap around on overflow/underflow; undefined behaviour if quotient does not fit the integer width) `result = operand1 / operand2`
 
-Note: `mulex`/`muluex` requires `result` to be twice the width of the other variables; `divex`/`divuex` requires `dividend` to be twice the width of the other variables
+Note: `mulex`/`muluex` requires `result` to be twice the width of the other variables; `divex`/`divuex` requires `dividend` to be twice the width of the other variables.  (They map to a single instruction on x86 architecture.)
 
 ##### Logical and bitwise operators
 
 Variables must be integral types.
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `and` | `0x30` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result = operand1 & operand2`
 `or` | `0x31` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result = operand1 & operand2`
 `xor` | `0x32` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result == operand1 ^ operand2`
@@ -275,7 +277,7 @@ TODO.
 ##### Array operators
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `resize` | `0x70` | array: `referenceid`, size: `referenceid` | Resize `array` to the given size (existing elements are preserved if they fit within the new size)
 `create` | `0x71` | array: `referenceid`, size: `referenceid` | Resize `array` to the given size (existing elements may or may not be preserved)
 `clear` | `0x72` | array: `referenceid` | Resize `array` to zero length
@@ -285,7 +287,7 @@ Name | Opcode | Arguments | Description
 In this section, the operand and result can have different width.
 
 Name | Opcode | Arguments | Description
---- | --- | ---
+--- | --- | --- | ---
 `conv` | `0x80` | operand: `referenceid`, result: `referenceid` | Integer or float conversion (signed integer)
 `convu` | `0x81` | operand: `referenceid`, result: `referenceid` | Integer or float conversion (unsigned integer)
 `reinterpret` | `0x82` | operand: `referenceid`, result: `referenceid` | Reinterpretation between integer and float types (operand and result must have the same width)
