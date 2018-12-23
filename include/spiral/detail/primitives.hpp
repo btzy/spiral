@@ -8,13 +8,13 @@
 
 namespace spiral {
 
-    using typeid_int_t = ssize_t;
+    using typeid_underlying_t = ssize_t;
 
     namespace TypeIDs {
 
         // Weak typedef here, because this enum just defines constants for use.
         // Spiral represents varint with ssize_t.
-        enum : typeid_int_t {
+        enum : typeid_underlying_t {
             Array = -0x1,
             I8 = -0x20,
             I16 = -0x21,

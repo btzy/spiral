@@ -6,6 +6,7 @@
 #include <spiral/detail/function.hpp>
 #include <spiral/detail/import.hpp>
 #include <spiral/detail/export.hpp>
+#include <spiral/detail/instruction.hpp>
 
 #include <spiral/detail/span-lite/span.hpp>
 
@@ -37,6 +38,7 @@ namespace spiral {
         std::vector<Function> functions;
         std::vector<Import> imports;
         std::vector<Export> exports;
+        std::vector<Instruction> instructions;
     };
 
     

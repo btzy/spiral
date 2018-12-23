@@ -2,6 +2,8 @@
 
 The specification is based on the WebAssembly binary encoding.  A major difference is that WebAssembly works on a single contiguous memory but Spiral works with dynamically-allocated arrays (using an `Array<T>` type).  Every `malloc/free` requires a host call.  Arrays are bounds-checked (unless the index is proved to be valid by other means).
 
+All memory (both stack and heap) are zero-initialized to prevent data from host process to leak into the JITted code.
+
 In general, variable-length lists are stored with a `varuint` size followed by the entries.
 
 Signed integers are stored in 2's compliment.
@@ -195,8 +197,18 @@ Value of `appendage`:
 
 * If `variableid` is zero, then there is no appendage.  Zero is only valid when used as an output-only reference; it denotes an unused output (e.g. `call` operator or `result` variable; not valid for inputs)
 * If `variableid` is a reference to an integral or float variable, then there is no appendage
-* If `variableid` is a reference to an array, then the appendage is either (1) `0:varint`, to denote a reference to that array itself, or (2) `indexref:referenceid` `appendage`, where `indexref` is a reference to an integral type (this means it refers to the element at (zero-based) `indexref` in the array).  `appendage` follows the same rules, taking `arr[index]` to be the variable.
-* If `variableid` is a reference to a record, then the appendage is either (1) `-1:varint`, to denote a reference to that record itself, or (2) `index:varint` `appendage`, where `index` is a reference to an integral type (this means it refers to the `index`-th member field in the record).  `appendage` follows the same rules, taking that member field to be the variable.
+* If `variableid` is a reference to an array, then the appendage is either (1) `0:varint`, to denote a reference to that array itself, or (2) `indexref:referenceid`, where `indexref` is a reference to an integral type (this means it refers to the element at (zero-based) `indexref` in the array).
+* If `variableid` is a reference to a record, then the appendage is either (1) `-1:varint`, to denote a reference to that record itself, or (2) `index:varint`, where `index` is a reference to an integral type (this means it refers to the `index`-th member field in the record).
+
+Note: To dereference multiple times, one has to move the variable to a temporary and then move it back, e.g. to change the value of `arr[1][2]`:
+
+```cpp
+tmp = move(arr[1]);
+tmp[1] = value;
+arr[1] = move(tmp);
+```
+
+The compiler should optimize the above code to elide the move.
 
 ##### Control flow operators
 
@@ -223,8 +235,13 @@ Works with all variable types.
 
 Name | Opcode | Arguments | Description
 --- | --- | --- | ---
-`copy` | `0x10` | source: `referenceid`, destination: `referenceid` | Copy immediate into variable (source is preserved)
-`move` | `0x11` | source: `referenceid`, destination: `referenceid` | Move immediate into variable (source may or may not be preserved)
+`copy` | `0x10` | source: `referenceid`, destination: `referenceid` | Copy source to destination (source is preserved)
+`move` | `0x11` | source: `referenceid`, destination: `referenceid` | Move source to destination (source may or may not be preserved)
+`swap` | `0x12` | source: `referenceid`, destination: `referenceid` | Swap source with destination
+
+`move` is guaranteed not to allocate any new memory.  `swap` is guaranteed not to allocate or deallocate any memory.
+
+Note: Unlike in C++, `copy`/`move`/`swap` cannot be customized.  `swap` is equivalent to a byte-wise swap, and `move` does a byte-wise copy from `source` to `destination` (`move` also does other things to ensure proper ownership of memory (for arrays), e.g. destructing `destination` first and then setting `source` to some valid state, or a byte-wise copy from `destination` to `source` (thus being equivalent to `swap`).  There is no guarantee on what happens to the original data in `destination` or what is stored in `source` at the end of the operation, apart from the guarantee that any heap memory is properly owned by an object (so that there will not be heap corruption or memory leaks)).  `copy` is a deep copy (which might allocate memory); there is no notion of shared ownership in SpiralIR.
 
 ##### Arithmetic and comparison operators
 
@@ -260,10 +277,10 @@ Name | Opcode | Arguments | Description
 `or` | `0x31` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result = operand1 & operand2`
 `xor` | `0x32` | operand1: `referenceid`, operand2: `referenceid`, result: `referenceid` | `result == operand1 ^ operand2`
 `not` | `0x34` | operand: `referenceid`, result: `referenceid` | `result = ~operand`
-`notl` | `0x35` | operand: `referenceid`, result: `referenceid` | `result = !operand`
-`popcnt` | `0x36` | operand: `referenceid`, result: `referenceid` | `result` = number of "1" bits in `operand`
-`clz` | `0x38` | operand: `referenceid`, result: `referenceid` | `result` = number of leading "0"s in `operand`
-`ctz` | `0x39` | operand: `referenceid`, result: `referenceid` | `result` = number of trailing "0"s in `operand`
+`notl` | `0x35` | operand: `referenceid`, result: `referenceid` | `result = (operand == 0 ? 1 : 0)`
+`popcnt` | `0x36` | operand: `referenceid`, result: `referenceid` | `result` = number of "1" bits in `operand` (`result` width may differ from the other two parameters)
+`clz` | `0x38` | operand: `referenceid`, result: `referenceid` | `result` = number of leading "0"s in `operand` (`result` width may differ from the other two parameters)
+`ctz` | `0x39` | operand: `referenceid`, result: `referenceid` | `result` = number of trailing "0"s in `operand` (`result` width may differ from the other two parameters)
 `sll` | `0x3a` | operand: `referenceid`, shamt: `referenceid`, result: `referenceid` | Shift left logical (`shamt` width may differ from the other two parameters)
 `srl` | `0x3b` | operand: `referenceid`, shamt: `referenceid`, result: `referenceid` | Shift right logical (zeroes are used for padding on the left) (`shamt` width may differ from the other two parameters)
 `sra` | `0x3c` | operand: `referenceid`, shamt: `referenceid`, result: `referenceid` | Shift right arithmetic (sign bits are used for padding on the left) (`shamt` width may differ from the other two parameters)
@@ -281,6 +298,8 @@ Name | Opcode | Arguments | Description
 `resize` | `0x70` | array: `referenceid`, size: `referenceid` | Resize `array` to the given size (existing elements are preserved if they fit within the new size)
 `create` | `0x71` | array: `referenceid`, size: `referenceid` | Resize `array` to the given size (existing elements may or may not be preserved)
 `clear` | `0x72` | array: `referenceid` | Resize `array` to zero length
+
+`resize` will zero-initialize new elements (if any).  `create` will zero-initialize new elements.
 
 ##### Conversion operators
 
