@@ -21,8 +21,8 @@ namespace spiral {
      */
     class eof_exception : public io_exception {
     public:
-        explicit eof_exception(const char* description) : std::runtime_error(description) {}
-        explicit eof_exception(const std::string& description) : std::runtime_error(description) {}
+        explicit eof_exception(const char* description) : io_exception(description) {}
+        explicit eof_exception(const std::string& description) : io_exception(description) {}
         virtual ~eof_exception() noexcept {}
     };
 }
