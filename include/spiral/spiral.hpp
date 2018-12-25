@@ -1,3 +1,7 @@
+#pragma once
+
+#include <cstddef>
+#include <type_traits>
 #include <vector>
 
 #include <spiral/detail/typedefs.hpp>
@@ -10,6 +14,8 @@
 
 #include <spiral/detail/span-lite/span.hpp>
 
+#include <spiral/binarybuf/memorybuf.hpp>
+
 namespace spiral {
 
     template <typename T, ssize_t Extent = nonstd::dynamic_extent>
@@ -17,20 +23,22 @@ namespace spiral {
 
 
     /**
-    * Represents spiral bytecode (in uncompiled form).
-    */
+     * Represents spiral bytecode (in uncompiled form).
+     */
     class Module {
     public:
-        Module() = delete;
+        Module() = default;
         Module(Module&&) = default;
-        Module(const Module&) = delete;
+        Module(const Module&) = default;
         Module& operator=(Module&&) = default;
-        Module& operator=(const Module&) = delete;
+        Module& operator=(const Module&) = default;
 
         /**
-        * Constructs a module from a raw byte buffer.
-        */
-        explicit Module(byte* buf_begin, byte* buf_end);
+         * Constructs a module from a raw byte buffer.
+         */
+        template <typename IBinaryBuf, typename = std::enable_if_t<std::is_same_v<typename IBinaryBuf::element_type, byte>>>
+        void read(IBinaryBuf& binary_buf) {
+        }
 
     private:
         std::vector<Record> records;
